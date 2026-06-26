@@ -92,6 +92,8 @@ async def upload_file_1041(file: UploadFile=File(...)):
 #    finally: 
 #         if os.path.exists(temp_path):
 #             gc.collect()
+
+
 #             # time.sleep(1)
 #             os.remove(temp_path)
            
@@ -99,4 +101,4 @@ async def upload_file_1041(file: UploadFile=File(...)):
 
 if __name__ == "__main__":
     # 3. FIXED: Changed app to "main:app" string so reload=True works perfectly
-    uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
