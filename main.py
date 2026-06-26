@@ -7,7 +7,7 @@ import time
 import sys, gc
 from pathlib import Path
 from fastapi import FastAPI, File, UploadFile
-from Form1099.main_1099_backup import extract_1099_data
+from Form1099.main_1099 import extract_1099_data
 from FormW2.w2_extraction_final import extract_w2
 from Form1041.K1_1041_extraction import extract_1041
 
@@ -99,4 +99,4 @@ async def upload_file_1041(file: UploadFile=File(...)):
 
 if __name__ == "__main__":
     # 3. FIXED: Changed app to "main:app" string so reload=True works perfectly
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)
