@@ -1,0 +1,183 @@
+{
+  "form_type": "IRS_1040_2024",
+  "tax_year": {
+    "tax_year_beginning": "2024-01-01",
+    "tax_year_ending": "2024-12-31",
+    "year": "2024"
+  },
+  "taxpayer": {
+    "first_name": "John",
+    "middle_initial": "A",
+    "last_name": "Smith",
+    "ssn": "123456789"
+  },
+  "spouse": {
+    "first_name": "Jane",
+    "middle_initial": "M",
+    "last_name": "Smith",
+    "ssn": "987654321"
+  },
+  "address": {
+    "street": "789 Elm Avenue",
+    "apartment": "3B",
+    "city": "Springfield",
+    "state": "IL",
+    "zip_code": "62704",
+    "foreign_country": "N/A",
+    "foreign_province": "N/A",
+    "foreign_postal_code": "N/A"
+  },
+  "presidential_election_campaign": {
+    "taxpayer": true,
+    "spouse": false
+  },
+  "filing_status": {
+    "selected": "married_filing_jointly",
+    "options": {
+      "single": false,
+      "married_filing_jointly": true,
+      "married_filing_separately": {
+        "is_mfs": false,
+        "spouse_name": "N/A"
+      },
+      "head_of_household": false,
+      "qualifying_surviving_spouse": false
+    }
+  },
+  "nonresident_spouse_election": {
+    "checked": false,
+    "spouse_name": "N/A"
+  },
+  "digital_assets": {
+    "yes": false,
+    "no": true
+  },
+  "dependents": [
+    {
+      "first_name": "Alex",
+      "last_name": "Smith",
+      "ssn": "123121234",
+      "relationship": "Son",
+      "child_tax_credit": true,
+      "credit_for_other_dependents": false
+    },
+    {
+      "first_name": "Emma",
+      "last_name": "Smith",
+      "ssn": "987898776",
+      "relationship": "Daughter",
+      "child_tax_credit": true,
+      "credit_for_other_dependents": false
+    }
+  ],
+  "income": {
+    "line_1a_wages": 55200.0,
+    "line_1b_household_employee_wages": 0.0,
+    "line_1c_tip_income": 0.0,
+    "line_1d_medicaid_waiver_payments": 0.0,
+    "line_1e_dependent_care_benefits": 0.0,
+    "line_1f_adoption_benefits": 0.0,
+    "line_1g_form_8919_wages": 0.0,
+    "line_1h_other_income": 0.0,
+    "line_1i_nontaxable_combat_pay": 0.0,
+    "line_1z_total_earned_income": 55200.0,
+    "line_2a_tax_exempt_interest": 50.0,
+    "line_2b_taxable_interest": 150.0,
+    "line_3a_qualified_dividends": 80.0,
+    "line_3b_ordinary_dividends": 160.0,
+    "line_4a_ira_distributions": 0.0,
+    "line_4b_taxable_ira": 0.0,
+    "line_5a_pensions": 0.0,
+    "line_5b_taxable_pensions": 0.0,
+    "line_6a_social_security": 0.0,
+    "line_6b_taxable_social_security": 0.0,
+    "line_6c_lump_sum_election": false,
+    "line_7_capital_gain_loss": {
+      "ScheduleD_not_required": true,
+      "capital_gain_loss_amount": 0.0
+    },
+    "line_8_additional_income": 100.0,
+    "line_9_total_income": 66610.0,
+    "line_10_adjustments": 410.0,
+    "line_11a_adjusted_gross_income": 55200.0,
+    "line_12e_standard_or_itemized_deduction": 13850.0,
+    "line_13a_deduction_form_8995_or_8995A": 0.0,
+    "line_14_addlines_12_13": 13850.0,
+    "line_15_taxable_income": 41350.0
+  },
+  "tax_and_credits": {
+    "line_16_tax": 7300.0,
+    "line_16_tax_source_flags": {
+      "line_16_tax_source_flags_1_8814": false,
+      "line_16_tax_source_flags_2_4972": false,
+      "line_16_tax_source_flags_3_other": {
+        "text": "",
+        "flag": false
+      }
+    },
+    "line_17_amount_from_Schedule2_line3": 300.0,
+    "line_18_add_lines_16_17": 7600.0,
+    "line_19_child_tax_credit_or_other_dependents_from_schedule_8812": 0.0,
+    "line_20_amount_from_schedule3_line8": 0.0,
+    "line_21_add_lines_19_20": 0.0,
+    "line_22_subtract_line21_from_line18": 7600.0,
+    "line_23_other_taxes": 0.0,
+    "line_24_total_tax": 7600.0
+  },
+  "payments": {
+    "federal_income_tax_withheld_from": {
+      "line_25a_formW2": 6000.0,
+      "line_25b_form1099": 0.0,
+      "line_25c_other": 0.0,
+      "line_25d_total": 6000.0,
+      "line_26_estimated_tax_payments": 0.0,
+      "line_27a_eic": 0.0,
+      "line_28a_additional_child_tax_credit": 0.0,
+      "line_29_american_opportunity_credit_form_8863": 0.0,
+      "line_31_amount_from_schedule3_line15": 0.0,
+      "line_32_total_other_payments_and_refundable_credits": 0.0,
+      "line_33_total_payments": 6000.0
+    },
+  "refund": {
+    "line_34_amount_you_overpaid": 0.0,
+    "form_8888_attached": false,
+    "line_35a_refund_amount": 0.0,
+    "line_35b_routing_number": "N/A",
+    "line_35c_account_type": "N/A",
+    "line_35d_account_number": "N/A",
+    "line_36_applied_to_next_year": 0.0
+  },
+  "amount_you_owe": {
+    "line_37": 1600.0,
+    "line_38_estimated_tax_penalty": 0.0
+  },
+  "third_party_designee": {
+    "allow_discussion": true,
+    "name": "Sarah Williams",
+    "phone": "214-555-9876",
+    "pin": "54321"
+  },
+  "signatures": {
+    "taxpayer_signature_present": false,
+    "taxpayer_date": "N/A",
+    "taxpayer_occupation": "Software Engineer",
+    "taxpayer_identity_protection_pin": "123456",
+    "spouse_signature_present": false,
+    "spouse_date": "N/A",
+    "spouse_occupation": "Accountant",
+    "spouse_identity_protection_pin": "654321",
+    "phone": "2145551234",
+    "email": "john.smith@example.com"
+  },
+  "paid_preparer": {
+    "preparer_name": "David Smith",
+    "preparer_signature_present": false,
+    "date": "N/A",
+    "ptin": "P01234567",
+    "self_employed": false,
+    "firm_name": "Star Tax Services",
+    "phone": "2145554321",
+    "firm_address": "500 Main Street, San Diego, CA 92102",
+    "firm_ein": "12-3456789"
+  }
+}

@@ -1,0 +1,9 @@
+.venv/
+*.pyc
+*.md
+*.pyc
+__pycache__/
+.vscode
+.env
+*.png
+*.json

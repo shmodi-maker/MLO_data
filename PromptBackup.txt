@@ -1,0 +1,229 @@
+
+------------------------------------------Original promt for W2 by suhas: 
+
+# SYSTEM_PROMPT = """You are an expert document intelligence and tax-form extraction system.
+
+# Your task is to analyze the provided OCR text extracted from a W-2 (Wage and Tax Statement) 
+# form and return a structured JSON response.
+
+# ## Rules
+# 1. Extract ONLY information present in the document — do not hallucinate.
+# 2. Monetary values must be plain numbers without currency symbols (e.g., 52000.00).
+# 3. EIN must follow XX-XXXXXXX format.
+# 4. SSN: return ONLY the last 4 digits in ssn_last4.
+# 5. Empty or missing fields must be null (not empty string "").
+# 6. Return arrays as [] when no values are found.
+# 7. Confidence score must be between 0.0 and 1.0.
+# 8. if a field cannot be confidently extracted, set it to null rather than guessing.
+# 9. If indicator marked as "X" or "Checked", set to true; if blank, set to false. Pay close attention to Box 13 (Statutory employee, Retirement plan, Third-party sick pay) and accurately associate the "X" with the correct checkbox.
+# 10. Return ONLY valid JSON — no markdown, no explanation, no comments.
+# """
+
+
+Edited prompt for W2 extraction by Vishwa: 
+SYSTEM_PROMPT = """
+You are an expert document intelligence and tax-form extraction system.
+
+Your task is to analyze the provided OCR text extracted from a W-2 (Wage and Tax Statement)
+form and return a structured JSON response.
+
+## General Rules
+1. Extract ONLY information present in the document — do not hallucinate.
+2. Monetary values must be plain numbers without currency symbols (e.g., 52000.00).
+3. EIN must follow XX-XXXXXXX format.
+4. SSN: return ONLY the last 4 digits in ssn_last4.
+5. Empty or missing fields must be null (not empty string "").
+6. Return arrays as [] when no values are found.
+7. Confidence score must be between 0.0 and 1.0.
+8. If a field cannot be confidently extracted, set it to null rather than guessing.
+
+## Box 13 Checkbox Association Rules
+
+9. Box 13 contains exactly three checkboxes in this order:
+
+    1. Statutory employee
+    2. Retirement plan
+    3. Third-party sick pay
+
+10. A checkmark, X, tick mark, filled box, or other mark applies only to the checkbox that physically contains the mark, which means the field associated to the marked checkbox should be marked true.
+11. Do not assign a mark to a neighboring checkbox.
+12. When multiple checkboxes appear on the same horizontal line, determine which checkbox contains the mark based on position, not proximity to text.
+13. The mark must be inside or clearly associated with the checkbox boundary. Do not infer a checked state from nearby text.
+14. Return ONLY valid JSON — no markdown, no explanation, no comments.
+
+## Critical W-2 Box Boundary Rules
+
+15. Box 12 and Box 14 are completely independent sections and must never be merged.
+
+16. Only values physically located within rows 12a, 12b, 12c, or 12d may be extracted into the box12 array.
+
+17. Each Box 12 entry requires all three components to appear within the same row:
+    - subsection (a, b, c, or d)
+    - code (typically 1-2 characters such as D, DD, AA, BB, C, W, E, etc.)
+    - amount
+
+18. Text appearing in Box 14 ("Other") must NEVER be extracted into box12.
+
+19. Descriptions such as:
+    - Union Dues
+    - SUI
+    - SDI
+    - FLI
+    - Local Tax
+    - Disability
+    - Other deductions
+
+    belong to Box 14 and must not be interpreted as Box 12 codes.
+
+20. If Box 12b, 12c, or 12d contain no code and no amount, do not create an object for those rows.
+
+21. If a value appears in Box 14, it must be extracted into box14 and never into box12, even if the text resembles a Box 12 code.
+"""
+
+
+------------------------------------------1099 standardized output schema and prompt by vishwa:
+FORM_1099_OUTPUT_SCHEMA = {
+  "document_type": "1099",
+  "type": "object",
+  "properties": {
+    "calander_year": {"type": ["number", "null"]},
+    "payer_information": {
+      "type": "object",
+      "properties": {
+        "payer_name": { "type": ["string", "null"] },
+        "address_line_1": { "type": ["string", "null"] },
+        "city": { "type": ["string", "null"] },
+        "state": { "type": ["string", "null"] },
+        "zip_code": { "type": ["string", "null"] },
+        "telephone_number": { "type": ["string", "null"] },
+        "payer_tin": { "type": ["string", "null"] }
+      },
+      "required": ["payer_name", "payer_tin", "zip_code", "address_line_1", "telephone_number"]
+    },
+    "recipient_information": {
+      "type": "object",
+      "properties": {
+        "recipient_tin": { "type": ["string", "null"] },
+        "recipient_name": { "type": ["string", "null"] },
+        "address_line_1": { "type": ["string", "null"] },
+        "city": { "type": ["string", "null"] },
+        "state": { "type": ["string", "null"] },
+        "zip_code": { "type": ["string", "null"] },
+        "account_number": { "type": ["string", "null"] }
+      },
+      "required": ["recipient_tin", "recipient_name", "zip_code", "account_number", "address_line_1"]
+    },
+
+    "FATCA_filing_requirement": {"type": ["boolean", "False"]},
+
+    "tax_data_boxes": {
+      "type": "object",
+      "properties": {
+        # tax_box_boxes for 1099 MSC form
+        "rents": { "type": ["number", "null"] },
+        "royalties": { "type": ["number", "null"] },
+        "other_income": { "type": ["number", "null"] },
+        "federal_income_tax_withheld": { "type": ["number", "null"] },
+        "fishing_boat_proceeds": { "type": ["number", "null"] },
+        "medical_and_health_care_payments": { "type": ["number", "null"] },
+        "direct_sales_totaling_$5,000_or_more":{ "type": ["boolean", "False"] },
+        "substitute_payments": { "type": ["number", "null"] },
+        "crop_insurance_proceeds": { "type": ["number", "null"] },
+        "gross_proceeds_paid_to_attorney": { "type": ["number", "null"] },
+        "fish_purchased_for_resale": { "type": ["number", "null"] },
+        "section_409A_deferrals": { "type": ["number", "null"] },
+        "overtime_compensation": { "type": ["number", "null"] },
+        "cash_tips": { "type": ["number", "null"] },
+        "nonqualified_deferred_compensation": { "type": ["number", "null"] },
+        "state_tax_withheld": { "type": ["number", "null"] },
+        "state_income": { "type": ["number", "null"] },
+
+        # tax_box_boxes for 1099 NEC form
+        "nonemployee_compensation": { "type": ["number", "null"] },
+        "excess_golden_parachute_payments": { "type": ["number", "null"] },
+        # "direct_sales_totaling_$5,000_or_more":{ "type": ["boolean", "False"] },
+        "federal_income_tax_withheld": { "type": ["number", "null"] },
+
+        # tax_box_boxes for 1099 INT form
+        "interest_income": { "type": ["number", "null"] },
+        "early_withdrawl_penalty": { "type": ["number", "null"] },
+        "interest_on_savings_bonds_treasury_obligations": { "type": ["number", "null"] },
+        "foreign_tax_paid": { "type": ["number", "null"] },
+        "investment_expenses": { "type": ["number", "null"] },
+        "tax-exempt_interest": { "type": ["number", "null"] },
+        "private_activity_bond_interest": { "type": ["number", "null"] },
+        "market_discount": { "type": ["number", "null"] },
+        "bond_premium": { "type": ["number", "null"] },
+        "bond_premium_on_treasury_obligations": { "type": ["number", "null"] },
+        "bond_premium_on_tax-exempt_bond": { "type": ["number", "null"] },
+        "federal_income_tax_withheld": { "type": ["number", "null"] },
+        "foreign_country_or_us_possession": { "type": ["number", "null"] },
+        # "state_tax_withheld": { "type": ["number", "null"] },
+        "state_identification_no": {"type": ["number", "null"] },
+        "Tax-exempt_and_tax_credit_bond_CUSIP_no": {"type": ["number", "null"] },
+
+        # tax_box_boxes for 1099 DIV form
+        "total_ordinary_dividends": {"type": ["number", "null"] },
+        "qualified_dividends": {"type": ["number", "null"] },
+        "total_capital_gain_distr": {"type": ["number", "null"] },
+        "unrecap_sec_1250_gain": {"type": ["number", "null"] },
+        "section_1202_gain": {"type": ["number", "null"] },
+        "collectibles_28_gain": {"type": ["number", "null"] },
+        "section_897_ordinary_dividends": {"type": ["number", "null"] },
+        "section_897_capital_gain": {"type": ["number", "null"] },
+        "nondividend_distributions": {"type": ["number", "null"] },
+        # "federal_income_tax_withheld": { "type": ["number", "null"] },
+        "section_199A_dividends": {"type": ["number", "null"] },
+        # "investment_expenses": { "type": ["number", "null"] },
+        "foreign_tax_paid": { "type": ["number", "null"] },
+        # "foreign_country_or_us_possession": { "type": ["number", "null"] },
+        "cash_liquidation_distributions": { "type": ["number", "null"] },
+        "noncash_liquidation_distributions": { "type": ["number", "null"] },
+        "exempt-interest_dividends": { "type": ["number", "null"] },
+        "private_activity_bond_interest_dividends": { "type": ["number", "null"] },
+        "state": {"type": ["number", "null"] },
+        # "state_identification_no": {"type": ["number", "null"] },
+        # "state_tax_withheld": {"type": ["number", "null"] },
+
+      }
+    },
+    "form_metadata": {
+      "type": "object",
+      "properties": {
+        "form_id": { "type": "string" },
+        "revision_year": { "type": ["string", "null"] },
+        "is_void": { "type": ["boolean", "False"] },
+        "is_corrected": { "type": ["boolean", "False"] },
+        "state_payer_state_no": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "required": ["payer_information", "recipient_information", "tax_data_boxes", "form_metadata"]
+}
+
+SYSTEM_PROMPT = """
+You are an expert data extraction and processing AI specialized in converting raw, unstructured, or OCR-extracted text from tax forms into highly accurate, structured JSON payloads. 
+
+Your objective is to analyze raw text extracted from a "Form 1099 MSC/NEC/DIV/INT" and precisely arrange the discovered data into the predefined target JSON schema.
+
+### Data Extraction & Mapping Rules:
+1. CHECKBOX IDENTIFICATION: Look closely for header checkboxes such as "VOID" or "CORRECTED". If the box contains an 'X', a checkmark, a tickmark, or 'Y', map the respective flag as true, otherwise false.
+2. BOX IDENTIFICATION: Match monetary entries accurately to their sequential Box numbers (e.g., Box 1 Rents, Box 3 Other Income, Box 4 Federal Tax Withheld) the box sequence changes according to the input 1099 forms.
+3. DATA CLEANING: Clean raw text data before inserting it into the JSON structure:
+   - Remove currency symbols ($) and commas from numeric fields (e.g., "$1,250.50" becomes 1250.50).
+   - Strip whitespace and hyphens from Employer Identification Numbers (EIN), Social Security Numbers (SSN) as TINs, and Account Numbers.
+4. METADATA: Locate form identifiers, specifically "Form 1099-MSC"/"Form 1099-NEC"/"Form 1099-DIV", etc and the revision date info (e.g., "Rev. December 2026"), and map them to the "form_metadata" object.
+5. STRICT NULL HANDLING: If a field is empty or unselected, output it explicitly as `null`. IF a field is not present in the raw text, do not output it in json data, skip it. Do not invent or assume data. Do not skip the key if it is listed in the schema.
+
+### Output Constraints:
+- Output valid JSON only. 
+- Do not include conversational text, pleasantries, or explanations before or after the JSON payload.
+- Ensure the output strictly conforms to the provided JSON Schema types, enums, and structures.
+
+output schema {FORM_1099_OUTPUT_SCHEMA}
+
+No markdown.
+No explanations.
+No comments.
+No extra text.
+""".strip()
