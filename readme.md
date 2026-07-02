@@ -28,3 +28,6 @@ as input.
 -   **Multiple filetype compatibility.** (User will be able to upload
     pdf, jpeg, png)
 -   **Add a ratelimit for calling APIs**
+
+## Updates
+-   **Fixed 1040 extraction script**

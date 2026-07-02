@@ -58,7 +58,7 @@ def get_image_bytes(image_path: str) -> bytes:
     with open(image_path, "rb") as f:
         return f.read()
 
-def extract_1040_details_vision(image_paths: list, output_json_path: str):
+def extract_1040_2025(image_paths: list):
     logger.info("Initializing AWS Bedrock client...")
     try:
         client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
@@ -493,13 +493,13 @@ Please process the images and provide the complete JSON response now.
         parsed_json = extraction_metrics(parsed_json)
         
         # Make sure directory exists if output_json_path has a directory
-        out_dir = os.path.dirname(output_json_path)
-        if out_dir:
-            os.makedirs(out_dir, exist_ok=True)
+        # out_dir = os.path.dirname(output_json_path)
+        # if out_dir:
+        #     os.makedirs(out_dir, exist_ok=True)
             
-        with open(output_json_path, 'w', encoding='utf-8') as f:
-            json.dump(parsed_json, f, indent=4, ensure_ascii=False)
-        logger.info(f"Successfully extracted details and saved JSON to {output_json_path}")
+        # with open(output_json_path, 'w', encoding='utf-8') as f:
+        #     json.dump(parsed_json, f, indent=4, ensure_ascii=False)
+        # logger.info(f"Successfully extracted details and saved JSON to {output_json_path}")
         return parsed_json
         
     except ClientError as e:
@@ -641,14 +641,14 @@ def extraction_metrics(parsed_json, accuracy_score=None):
     return data
     
 
-if __name__ == "__main__":
-    # We use the generated images from 1040_pdf2iamge.py 
-    target_images = [
-        "Form1040_images/output_images_2025/page_1.png",
-        "Form1040_images/output_images_2025/page_2.png"
-    ]
+# if __name__ == "__main__":
+#     # We use the generated images from 1040_pdf2iamge.py 
+#     target_images = [
+#         "Form1040_images/output_images_2025/page_1.png",
+#         "Form1040_images/output_images_2025/page_2.png"
+#     ]
     
-    output_json_file = "json/f1040_2025_output.json"
+#     output_json_file = "json/f1040_2025_output.json"
     
-    logger.info("Starting 1040 2025 Form Extraction with Bedrock Vision LLM")
-    extract_1040_details_vision(target_images, output_json_file)
+#     logger.info("Starting 1040 2025 Form Extraction with Bedrock Vision LLM")
+#     extract_1040_2025(target_images, output_json_file)
