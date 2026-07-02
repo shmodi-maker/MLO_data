@@ -7,3 +7,5 @@ __pycache__/
 .env
 *.png
 *.json
+Form1040/main_1040_backup.py
+Form1040/1040_pdf2iamge.py
