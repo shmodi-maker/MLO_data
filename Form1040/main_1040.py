@@ -1,12 +1,14 @@
 import logging
 import boto3
 from botocore.exceptions import ClientError
-import os
+import io
 import json
 import fitz
+from PIL import Image
+from io import BytesIO
 from pdf2image import convert_from_path
-from f1040_2024_vision import extract_1040_2024
-from f1040_2025_vision import extract_1040_2025
+from Form1040.f1040_2024_vision import extract_1040_2024
+from Form1040.f1040_2025_vision import extract_1040_2025
 
 
 logging.basicConfig(
@@ -26,23 +28,39 @@ pdf_path = r"C:/Users/Lenovo/Desktop/ZIPAI_proj/FormFormats/1040/f1040_2024.pdf"
 # logic for converting pdf to image. Save images in a list to pass into detect_formyear() and extract_1040_data()
 
 def pdftoimage(file_path): 
-    pages= []
-    # poppler_path = r"C:\Users\Lenovo\Downloads\Release-25.12.0-0\poppler-25.12.0\Library\bin"
-    # if not os.path.exists(poppler_path):
-    #     poppler_path = None
-    # if poppler_path:
-    #     pages = convert_from_path(file_path, dpi=300, poppler_path=poppler_path)
+    # pages= []
+    # pages = convert_from_path(file_path, dpi=300)
+    # # just make sure poppler installed on that server's OS. If it's a Linux server and if poppler error accours, run sudo apt-get install poppler-utils once during setup 
+    # debug_dir = "debug_images_2025"
+    # os.makedirs(debug_dir, exist_ok=True)
+    # for i, page in enumerate(pages, start=1):
+    #     save_path = os.path.join(debug_dir, f"page_{i}.png")
+    #     page.save(save_path, "PNG")
+    #     print(f"Saved: {save_path}")
 
-    # just make sure poppler installed on that server's OS. If it's a Linux server and if poppler error accours, run sudo apt-get install poppler-utils once during setup 
+    pages = []
+    doc = fitz.open(file_path)
+    print(type(doc))
+    for page_num in range(doc.page_count):
+        page = doc.load_page(page_num)
+        mat = fitz.Matrix(300 / 72, 300 / 72)
+        pix = page.get_pixmap(matrix=mat, alpha=False)
+        img = Image.open(io.BytesIO(pix.tobytes("png")))
+        pages.append(img)
+    doc.close()
 
-    pages = convert_from_path(file_path, dpi=300)
     return pages #should return pdf pages converted to image as list
 
 # for checking form_year, first page is required. To pass as arg in extract_1040_2024(), image list is req. 
 def detect_formyear(image_list): #pass image_list as arg after adding logic for pdf to image 
+    image = image_list[0]
+    buffer = BytesIO()
 
-    with open(image_list[0], "rb") as f: # with open(image_list[0], "rb") as f:
-        document_bytes = f.read()
+    image.save(buffer, format="PNG")
+    document_bytes = buffer.getvalue()
+
+    # with open(image_list[0], "rb") as f: # with open(image_list[0], "rb") as f:
+    #     document_bytes = f.read()
     try:      
         response = TEXTRACT_CLIENT.analyze_document(
             FeatureTypes=['TABLES', 'FORMS', 'LAYOUT'],
@@ -56,22 +74,16 @@ def detect_formyear(image_list): #pass image_list as arg after adding logic for 
     form_year = "" 
     for block in response.get("Blocks", []):
         if block.get("BlockType") == "LINE":
-            text = block.get("Text")
-            match text:
-                case "2024":
-                    form_year = "2024"
-                    return form_year
-                case "2025":
-                    form_year = "2025"
-                    return form_year
-                case _: #Should say that form is older than 2 years
-                    print("The form is either incorrect or older than 2 years")
-                    form_year=form_year.strip()
-                    continue
-    if form_year: 
-        print("Form year detected: ", form_year) 
-    if not form_year: 
-        print("Form year not detected or uploaded form is older than 2 years: ", form_year) 
+            continue
+
+        text = block.get("Text", "").strip()
+        if text in ("2024", "2025"):
+            print(f"Form year detected: {text}")
+            return text
+        
+
+    print("The form is either incorrect or older than 2 years")
+    return None
 
 
 # Call detect_formyear() here to detect year

@@ -21,6 +21,10 @@ print("Current Working Directory:", os.getcwd())
 
 app = FastAPI(debug=True)
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 @app.post("/v1/extract-1099")
 async def upload_file_1099(file: UploadFile=File(...)):
    temp_dir = tempfile.gettempdir()

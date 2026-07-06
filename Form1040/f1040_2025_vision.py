@@ -6,6 +6,7 @@ from urllib3 import response
 import os
 import json
 import logging
+from io import BytesIO
 import boto3
 from decimal import Decimal
 from botocore.exceptions import ClientError
@@ -54,9 +55,10 @@ def calculate_bedrock_cost(usage):
         "total_cost_usd": float(round(total_cost, 8))
     }
 
-def get_image_bytes(image_path: str) -> bytes:
-    with open(image_path, "rb") as f:
-        return f.read()
+def get_image_bytes(image):
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 def extract_1040_2025(image_paths: list):
     logger.info("Initializing AWS Bedrock client...")
@@ -69,14 +71,10 @@ def extract_1040_2025(image_paths: list):
     content_blocks = []
     
     # Read and append all images to the request
-    for img_path in image_paths:
-        if not os.path.exists(img_path):
-            logger.error(f"Image not found: {img_path}")
-            return
-            
-        logger.info(f"Loading image: {img_path}")
-        image_bytes = get_image_bytes(img_path)
-        
+    for i, image in enumerate(image_paths):
+        print(f"Image {i+1}: size={image.size}, mode={image.mode}")
+        image_bytes = get_image_bytes(image)
+        print(f"Image {i+1} bytes: {len(image_bytes)}")
         # Bedrock Converse API format for images
         content_blocks.append({
             "image": {
@@ -126,18 +124,18 @@ Rules:
 
     "header_details": {
         "tax_year": {
-        "tax_year_beginning": "",
-        "tax_year_ending": "",
-        "year": ""
-      }
+          "tax_year_beginning": "",
+          "tax_year_ending": "",
+          "year": ""
+      },
       "filed_pursuant": false,
-      "comabt_zone": false,
+      "combat_zone": false,
       "deceased": {
         "is_deceased": false,
         "taxpayer_deceased_date": "",
-        "spouse_deceased_date": "",
+        "spouse_deceased_date": ""
       }
-    }
+    },
 
   "taxpayer": {
     "first_name": "",
@@ -419,7 +417,7 @@ Please process the images and provide the complete JSON response now.
     content_blocks.append({
         "text": prompt_text.strip()
     })
-
+    print(f"Total content blocks: {len(content_blocks)}")
     logger.info("Sending request to Bedrock Vision LLM...")
     try:
         response = client.converse(

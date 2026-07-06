@@ -300,7 +300,7 @@ def parse_llm_response(raw_text: str) -> dict:
         return validate_w2_schema(parsed)
     except json.JSONDecodeError as e:
         logger.error("JSON parsing failed: %s", e)
-        logger.debug("Raw LLM output:\n%s", raw_text)
+        # logger.debug("Raw LLM output:\n%s", raw_text)
         raise ValueError(f"LLM returned invalid JSON: {e}") from e
 
 
