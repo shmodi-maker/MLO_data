@@ -1,64 +1,66 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# ZipAI MLO Extraction — Multi-Stage Dockerfile
-# ─────────────────────────────────────────────────────────────────────────────
-
-# ── Stage 1: Builder ─────────────────────────────────────────────────────────
+# ============================================================
+# Stage 1: Builder — install dependencies in an isolated layer
+# ============================================================
 FROM python:3.13-slim AS builder
 
 WORKDIR /build
 
-# Install OS-level build dependencies (needed for asyncpg, etc.)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        gcc \
-        libpq-dev \
+# System dependencies required to compile Python packages
+# (opencv, pdf2image, pytesseract, etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-
-# Install Python deps into a virtual-env so we can copy it cleanly
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
-# ── Stage 2: Runtime ─────────────────────────────────────────────────────────
+# ============================================================
+# Stage 2: Runtime — lean final image
+# ============================================================
 FROM python:3.13-slim AS runtime
 
-# Install only the runtime C libraries (no compiler)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        libpq5 \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy the pre-built virtual-env from the builder stage
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Create a non-root user
-RUN groupadd --gid 1000 appuser && \
-    useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
+LABEL maintainer="ZipAI"
+LABEL description="MLO_data – FastAPI service for tax-form extraction"
 
 WORKDIR /app
 
-# Copy application source
-COPY --chown=appuser:appuser . .
+# Runtime system libraries for OpenCV, Tesseract, Poppler (pdf2image)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    poppler-utils \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libgl1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root
+# Copy pre-built Python packages from builder stage
+COPY --from=builder /install /usr/local
+
+# Create a non-root user for security
+RUN groupadd --gid 1000 appuser \
+    && useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
+
+# Copy application source code
+COPY . .
+
+# Own the app directory
+RUN chown -R appuser:appuser /app
+
 USER appuser
 
-# Expose the default FastAPI port
-EXPOSE 8000
+EXPOSE 8002
 
-# Health check — hit the /health endpoint every 30s
+# Health check against the /health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')" || exit 1
 
-# Run uvicorn (production-ready with workers)
-CMD ["uvicorn", "main:app", \
-     "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "4", \
-     "--log-level", "info"]
+# Run with uvicorn — bind to 0.0.0.0 so Docker networking works
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
