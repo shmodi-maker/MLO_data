@@ -10,7 +10,6 @@ from pdf2image import convert_from_path
 from Form1040.f1040_2024_vision import extract_1040_2024
 from Form1040.f1040_2025_vision import extract_1040_2025
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
