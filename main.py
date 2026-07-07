@@ -43,7 +43,6 @@ async def upload_file_1099(file: UploadFile=File(...)):
             os.remove(temp_path)
 
 @app.post("/v1/extract_w2")
-
 async def upload_file_w2(file: UploadFile=File(...)):
    temp_dir = tempfile.gettempdir()
    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
@@ -81,7 +80,6 @@ async def upload_file_1041(file: UploadFile=File(...)):
 
 
 @app.post("/v1/extract_1040")
-
 async def upload_file_1040(file: UploadFile=File(...)):
    temp_dir = tempfile.gettempdir()
    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
@@ -99,5 +97,4 @@ async def upload_file_1040(file: UploadFile=File(...)):
             os.remove(temp_path)
            
 if __name__ == "__main__":
-    # 3. FIXED: Changed app to "main:app" string so reload=True works perfectly
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

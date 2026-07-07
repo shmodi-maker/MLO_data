@@ -8,6 +8,7 @@ import os
 import json
 import logging
 import boto3
+from io import BytesIO
 from decimal import Decimal
 from botocore.exceptions import ClientError
 import re
@@ -55,9 +56,11 @@ def calculate_bedrock_cost(usage):
         "total_cost_usd": float(round(total_cost, 8))
     }
 
-def get_image_bytes(image_path: str) -> bytes:
-    with open(image_path, "rb") as f:
-        return f.read()
+
+def get_image_bytes(image):
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 def extract_1040_2024(image_paths: list):
     logger.info("Initializing AWS Bedrock client...")
@@ -70,13 +73,8 @@ def extract_1040_2024(image_paths: list):
     content_blocks = []
     
     # Read and append all images to the request
-    for img_path in image_paths:
-        if not os.path.exists(img_path):
-            logger.error(f"Image not found: {img_path}")
-            return
-            
-        logger.info(f"Loading image: {img_path}")
-        image_bytes = get_image_bytes(img_path)
+    for image in image_paths:
+        image_bytes = get_image_bytes(image)
         
         # Bedrock Converse API format for images
         content_blocks.append({
@@ -458,10 +456,6 @@ Please process the images and provide the complete JSON response now.
 
             # logger.error(f"\nChar {e.colno} points to: '{cleaned_text[e.pos - 1]}'")
             # logger.error("==========================")
-
-        with open("cleaned_text.txt", "w", encoding='utf-8') as f:
-          f.write(cleaned_text)
-        logger.info("Cleaned response saved to cleaned_text.txt")
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
