@@ -570,26 +570,23 @@ def extract_1099_div(
         raise ValueError("Error: Failed to fetch form data.")
     return form_data
 
-# ---------------------------------------------------------------------------
-# Save Results
-# ---------------------------------------------------------------------------
 
-def save_results(data: dict, output_path: str = "1099div_extracted.json") -> None:
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-    logger.info("Results saved to: %s", output_path)
+# def save_results(data: dict, output_path: str = "1099div_extracted.json") -> None:
+#     with open(output_path, "w", encoding="utf-8") as f:
+#         json.dump(data, f, indent=2, ensure_ascii=False)
+#     logger.info("Results saved to: %s", output_path)
 
-if __name__ == "__main__":
-    import sys
-    document_path = sys.argv[1] if len(sys.argv) > 1 else "1099_DIV.pdf"
+# if __name__ == "__main__":
+#     import sys
+#     document_path = sys.argv[1] if len(sys.argv) > 1 else "1099_DIV.pdf"
 
-    try:
-        result = extract_1099_div(
-            file_path=document_path,
-            use_textract=True,
-        )
-        save_results(result, output_path="json/1099div_extracted_output.json")
-        print(json.dumps(result, indent=2))
-    except Exception as e:
-        logger.error("Pipeline failure: %s", e)
-        sys.exit(1)
+#     try:
+#         result = extract_1099_div(
+#             file_path=document_path,
+#             use_textract=True,
+#         )
+#         save_results(result, output_path="json/1099div_extracted_output.json")
+#         print(json.dumps(result, indent=2))
+#     except Exception as e:
+#         logger.error("Pipeline failure: %s", e)
+#         sys.exit(1)

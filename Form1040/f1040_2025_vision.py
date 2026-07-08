@@ -72,9 +72,9 @@ def extract_1040_2025(image_paths: list):
     
     # Read and append all images to the request
     for i, image in enumerate(image_paths):
-        print(f"Image {i+1}: size={image.size}, mode={image.mode}")
+        # print(f"Image {i+1}: size={image.size}, mode={image.mode}")
         image_bytes = get_image_bytes(image)
-        print(f"Image {i+1} bytes: {len(image_bytes)}")
+        # print(f"Image {i+1} bytes: {len(image_bytes)}")
         # Bedrock Converse API format for images
         content_blocks.append({
             "image": {
@@ -417,7 +417,7 @@ Please process the images and provide the complete JSON response now.
     content_blocks.append({
         "text": prompt_text.strip()
     })
-    print(f"Total content blocks: {len(content_blocks)}")
+    # print(f"Total content blocks: {len(content_blocks)}")
     logger.info("Sending request to Bedrock Vision LLM...")
     try:
         response = client.converse(
@@ -519,10 +519,9 @@ Please process the images and provide the complete JSON response now.
             # logger.error(f"\nChar {e.colno} points to: '{cleaned_text[e.pos - 1]}'")
             # logger.error("==========================")
 
-        with open("cleaned_text.txt", "w", encoding='utf-8') as f:
-          f.write(cleaned_text)
-        logger.info("Cleaned response saved to cleaned_text.txt")
-
+        # with open("cleaned_text.txt", "w", encoding='utf-8') as f:
+        #   f.write(cleaned_text)
+        # logger.info("Cleaned response saved to cleaned_text.txt")
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
 

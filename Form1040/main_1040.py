@@ -73,32 +73,29 @@ def detect_formyear(image_list): #pass image_list as arg after adding logic for 
     form_year = "" 
     for block in response.get("Blocks", []):
         if block.get("BlockType") == "LINE":
-            continue
+            text = block.get("Text", "").strip()
 
-        text = block.get("Text", "").strip()
-        if text in ("2024", "2025"):
-            print(f"Form year detected: {text}")
-            return text
+            if text in ("2024", "2025"):
+                print(f"Form year detected: {text}")
+                return text
         
 
     print("The form is either incorrect or older than 2 years")
     return None
 
 
-# Call detect_formyear() here to detect year
+# call detect_formyear() here to detect year
 def extract_1040_data(file_path): #pass image_list as arg after adding logic
     image_list = pdftoimage(file_path)
     year = detect_formyear(image_list) #pass image_list as arg after adding logic
 
     match year:
         case "2024":
-            year = "2024"
-            extracted_data=extract_1040_2024(image_list)
-            return extracted_data
+            return extract_1040_2024(image_list), "2024"
         case "2025":
-            year = "2025"
-            extracted_data=extract_1040_2025(image_list)
-            return extracted_data
+            return extract_1040_2025(image_list), "2025"
+        case _:
+            raise ValueError(f"Unsupported or undetected form year: {year}")
             
 # extract_1040_data(pdf_path)
 

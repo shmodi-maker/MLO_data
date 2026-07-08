@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 import boto3
 from botocore.exceptions import ClientError
+# from database.operations import Database
 # from sqlalchemy import false
 
 
@@ -593,6 +594,18 @@ def extract_w2(
 
     logger.info("W-2 extraction pipeline complete.")
     logger.info("=" * 60)
+
+    # db = Database()
+    # try:
+    #     w2_data = extraction_metrics(w2_data)
+
+    #     db.insert_json(
+    #         table_name="form_w2",
+    #         json_data=w2_data
+    #     )
+    # finally:
+    #     db.close()
+
     return w2_data
 
 
