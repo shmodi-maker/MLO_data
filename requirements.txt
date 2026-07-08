@@ -20,3 +20,5 @@ pdf2image==1.17.0               # used in Form1040/main_1040.py
 ratelimit==2.2.1
 
 psycopg2-binary==2.9.10
+
+python-dotenv==1.1.1
