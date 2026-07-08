@@ -20,13 +20,13 @@ class Database:
             INSERT INTO mlo.{table_name}
             (
                 extracted_json,
-                extracted_timestamp
+                extracted_timestamp,
                 s3_key
             )
             VALUES
             (
                 %s,
-                NOW()
+                NOW(),
                 %s
             )
             """
@@ -46,7 +46,7 @@ class Database:
             (
                 %s,
                 NOW(),
-                %s
+                %s,
                 %s
             )
             """
