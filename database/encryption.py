@@ -30,4 +30,4 @@ def decrypt_json(data: bytes):
         ciphertext,
         None
     )
-    return json.loads(plaintext.decode())
+    return json.loads(plaintext.decode("utf-8"))

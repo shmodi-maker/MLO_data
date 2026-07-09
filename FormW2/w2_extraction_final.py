@@ -199,8 +199,8 @@ def extract_text_with_textract(file_path: str) -> str:
     logger.info(
         "Textract extraction complete. Total lines extracted: %d", len(lines)
     )
-    print("extracted text--->     :",extracted_text)
-    print("---"*30)
+    # print("extracted text--->     :",extracted_text)
+    # print("---"*30)
 #     print("textract usage: ",response.get("usage", {}))
     return extracted_text
 
