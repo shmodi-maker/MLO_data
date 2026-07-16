@@ -468,6 +468,9 @@ def extraction_metrics(parsed_json: dict, accuracy_score=None) -> dict:
             f"Low model confidence score: {confidence:.2f} (threshold: 0.75)."
         )
 
+    # 8. HITL trigger is kept true for each application/form for now as per client requirement. REMOVE this line going forward.
+    hitl_trigger = True
+
     # Collect all empty / N/A field paths for review
     na_fields = [
         field for field, value in all_fields.items()

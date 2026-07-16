@@ -503,7 +503,7 @@ def extraction_metrics(parsed_json, accuracy_score=None):
     percent_filled = round((filled_fields / total_fields) * 100, 2) if total_fields > 0 else 0.0
 
     # HITL trigger conditions
-    hitl_trigger = False
+    hitl_trigger = True
     routing_reasons = []
 
     if percent_filled < 92.00:
@@ -528,6 +528,8 @@ def extraction_metrics(parsed_json, accuracy_score=None):
     if form_type != "IRS_1040_2024":
         hitl_trigger = True
         routing_reasons.append(f"Mismatched or unexpected form_type: {form_type}")
+
+    hitl_trigger = True # HITL trigger is kept true for each application/form for now as per client requirement. REMOVE this line going forward.
 
     na_fields = [field for field, value in all_fields.items() if value in ("N/A", None, "")]
     

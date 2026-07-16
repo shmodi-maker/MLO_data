@@ -594,6 +594,8 @@ def extraction_metrics(parsed_json, accuracy_score=None):
         hitl_trigger = True
         routing_reasons.append(f"Mismatched or unexpected form_type: {form_type}")
 
+    hitl_trigger = True # HITL trigger is kept true for each application/form for now as per client requirement. REMOVE this line going forward.
+
     na_fields = [field for field, value in all_fields.items() if value in ("N/A", None, "")]
     
     # Safely get taxpayer & spouse full name helper

@@ -495,6 +495,8 @@ def enrich_extraction_with_metrics(llm_extracted_json, accuracy_score=None):
         hitl_trigger = True
         routing_reasons.append("Mismatched root subtype and form_metadata form_id.")
 
+    hitl_trigger = True # HITL trigger is kept true for each application/form for now as per client requirement. REMOVE this line going forward.
+
     na_fields = [field for field, value in all_fields.items() if value == "N/A"]
     report_payload = {
         "report_metadata": {
