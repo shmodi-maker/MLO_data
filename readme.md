@@ -31,3 +31,4 @@ as input.
 
 ## Updates
 -   **Fixed 1040 extraction script**
+-   **Kept HITL trigger as always true for now (Client's requirement). MLO admin dashboard should always show red_pill=true for now.**
