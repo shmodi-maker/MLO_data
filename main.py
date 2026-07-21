@@ -6,13 +6,15 @@ import time
 import sys, gc
 from ratelimit import limits
 from pathlib import Path
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from Form1099.main_1099 import extract_1099_data
 from FormW2.w2_extraction_final import extract_w2
 from Form1041.K1_1041_extraction import extract_1041
 from Form1040.main_1040 import extract_1040_data
 from database.operations import Database
 from database.s3 import upload_pdf
+from credit_report.credit_api import get_credit_report
+from paystub.paystub_ext import extract_paystub
 
 # add ratelimits for APIs
 
@@ -173,6 +175,74 @@ async def upload_file_1040(
             os.remove(temp_path)
 
 
+@app.post("/v1/credit-report")
+async def fetch_credit_report(request: Request):
+
+    try:
+        body = await request.body()
+        xml_request = body.decode("utf-8")
+
+        if not xml_request.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="XML request body is required"
+            )
+
+        xml_response = get_credit_report(xml_request)
+
+        return {
+            "status": "success",
+            "data": xml_response
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Credit API request failed: {str(e)}"
+        )
+
+@app.post("/v1/extract_paystub")
+async def upload_file_paystub(
+    user_id: str = Form(...), 
+    file: UploadFile=File(...)
+    ):
+   temp_dir = tempfile.gettempdir()
+   temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
+
+   with open(temp_path, "wb") as buffer:
+       shutil.copyfileobj(file.file, buffer)
+   await file.close()
+   db = Database()
+   try:
+        s3_key = upload_pdf(temp_path, "paystub")
+        paystub_data = extract_paystub(temp_path)
+        if not paystub_data:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to extract paystub data"
+            )
+        document_id = db.insert_json(
+            table_name="paystub",
+            user_id=user_id,
+            json_data=paystub_data,
+            s3_key=s3_key
+        )
+        return {
+            "document_id": document_id,
+            "user_id": user_id,
+            "data": paystub_data
+        }
+
+   finally: 
+        db.close()
+        if os.path.exists(temp_path):
+            gc.collect()
+            # time.sleep(1)
+            os.remove(temp_path)
+
 # ----- retrieval APIs ----- 
 # --- using user_id: returns all specified forms for given user 
 
@@ -283,6 +353,32 @@ async def get_1041_by_user(user_id: str):
     finally:
         db.close()
 
+# retrieval for paystub BY SPECIFIC USER
+@app.get("/v1/paystub/user/{user_id}")
+async def get_paystub_by_user(user_id: str):
+    db = Database()
+
+    try:
+        records = db.get_json_by_user(
+            table_name="paystub",
+            user_id=user_id
+        )
+
+        if not records:
+            raise HTTPException(
+                status_code=404,
+                detail="No paystub records found"
+            )
+
+        return {
+            "user_id": user_id,
+            "total_records": len(records),
+            "records": records
+        }
+
+    finally:
+        db.close()
+
 # --- using document_id: returns single specified form
 
 # w2 retrieval USING SPECIFIC DOCUMENT 
@@ -366,6 +462,28 @@ async def get_1041_by_document(document_id: str):
             raise HTTPException(
                 status_code=404,
                 detail="1041 document not found"
+            )
+
+        return record
+
+    finally:
+        db.close()
+
+# paystub retrieval USING SPECIFIC DOCUMENT
+@app.get("/v1/paystub/document/{document_id}")
+async def get_paystub_by_document(document_id: str):
+    db = Database()
+
+    try:
+        record = db.get_json_by_document(
+            table_name="paystub",
+            document_id=document_id
+        )
+
+        if record is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Paystub document not found"
             )
 
         return record

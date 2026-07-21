@@ -56,9 +56,9 @@ def calculate_bedrock_cost(usage):
     }
 
 def get_image_bytes(image):
-    buffer = BytesIO()
-    image.save(buffer, format="PNG")
-    return buffer.getvalue()
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        return buffer.getvalue()
 
 def extract_1040_2025(image_paths: list):
     logger.info("Initializing AWS Bedrock client...")

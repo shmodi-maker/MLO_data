@@ -11,7 +11,8 @@ class Database:
         "form_w2",
         "form_1099",
         "form_1040",
-        "form_1041"
+        "form_1041",
+        "paystub"
     }
 
     def __init__(self):
@@ -42,7 +43,7 @@ class Database:
 
         try:
 
-            # W-2 and 1041
+            # W-2 and 1041 and paystub
             if (
                 subtype is None
                 and form_year is None
@@ -152,11 +153,10 @@ class Database:
 
             row = self.cursor.fetchone()
 
-            if row is None:
-
+            if row is None or row[0] is None:
                 raise RuntimeError(
-                    "document_id was not returned "
-                    "after insertion."
+                    f"document_id was not returned (is NULL) after insertion into table mlo.{table_name}. "
+                    "Ensure the database table's document_id column has a default sequence/UUID generator configured."
                 )
 
             document_id = row[0]
@@ -210,7 +210,7 @@ class Database:
             ORDER BY extracted_timestamp DESC
             """
 
-        # w2 and 1041
+        # w2 and 1041 and paystub
         else:
 
             query = f"""
