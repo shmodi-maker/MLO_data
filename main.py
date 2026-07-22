@@ -8,7 +8,8 @@ from ratelimit import limits
 from pathlib import Path
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from Form1099.main_1099 import extract_1099_data
-from FormW2.w2_extraction_final import extract_w2
+# from FormW2.w2_extraction_final import extract_w2
+from FormW2.w2_vision import extract_w2_vision
 from Form1041.K1_1041_extraction import extract_1041
 from Form1040.main_1040 import extract_1040_data
 from database.operations import Database
@@ -82,7 +83,7 @@ async def upload_file_w2(
    db = Database()
    try:
         s3_key = upload_pdf(temp_path, "w2")
-        w2_data = extract_w2(temp_path)
+        w2_data = extract_w2_vision(temp_path)
         document_id = db.insert_json(
             table_name="form_w2",
             user_id=user_id,

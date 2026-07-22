@@ -64,13 +64,13 @@ def get_image_bytes(image):
         if not os.path.exists(filepath):
             script_dir = os.path.dirname(os.path.abspath(__file__))
             alt_path = os.path.join(script_dir, os.path.basename(filepath))
-            alt_path_sub = os.path.join(script_dir, "paystub_test_img", os.path.basename(filepath))
+            # alt_path_sub = os.path.join(script_dir, "paystub_test_img", os.path.basename(filepath))
             parent_rel = os.path.normpath(os.path.join(script_dir, "..", filepath))
 
             if os.path.exists(parent_rel):
                 filepath = parent_rel
-            elif os.path.exists(alt_path_sub):
-                filepath = alt_path_sub
+            # elif os.path.exists(alt_path_sub):
+            #     filepath = alt_path_sub
             elif os.path.exists(alt_path):
                 filepath = alt_path
 
@@ -102,7 +102,7 @@ def pdftoimage(file_path):
 
     return pages
 
-def extract_paystub(image_paths: Union[List, str, Path]):
+def extract_w2_vision(image_paths: Union[List, str, Path]):
     if isinstance(image_paths, (str, Path)):
         image_paths = [image_paths]
 
@@ -142,9 +142,9 @@ def extract_paystub(image_paths: Union[List, str, Path]):
 
     prompt_text = """
 
-You are an expert financial document extraction assistant specializing in payroll and paystub parsing.
+You are an expert financial document extraction assistant specializing in payroll and form W2 parsing.
 
-Your task is to extract information from the provided paystub(s) and return a single JSON object that EXACTLY matches the schema below.
+Your task is to extract information from the provided form W2(s) and return a single JSON object that EXACTLY matches the schema below.
 
 Rules:
 
@@ -159,6 +159,18 @@ Rules:
 9. Return ONLY valid JSON.
 10. Output ONLY the JSON object. Do not include markdown, explanations, comments, or code fences.
 
+FIELD DEFINITIONS
+
+employee_data
+- Extract only the employee information shown on form w2.
+- Employee ssn and employee ssa number are the same field.
+- employee.first_name: Extract ONLY the employee's first name. Do NOT include the middle name, middle initial, or last name in this field.
+- employee.middle_name: Extract the employee's middle name or middle name initial/initials if present. Do NOT include the middle name or middle initial in the first_name field. If no middle name or middle initial is present, return "N/A".
+- employee.last_name: Extract ONLY the employee's last name.
+
+employer_data
+- Extract only the employer information shown on form w2.
+
 STRICT SCHEMA RULES
 
 - The JSON schema below is STRICT.
@@ -166,94 +178,46 @@ STRICT SCHEMA RULES
 - DO NOT add, remove, rename, or reorder keys.
 - DO NOT create additional objects or arrays.
 - DO NOT include deductions, taxes, benefits, gross pay, net pay, pay date, vacation, sick hours, check number, holiday earnings, bonuses, commissions, or any other information unless there is a corresponding field in the schema.
-- If information exists on the paystub but there is no matching field in the schema, IGNORE it completely.
+- If information exists on the w2 form but there is no matching field in the schema, IGNORE it completely.
 - The output JSON must exactly match the schema.
-
-FIELD DEFINITIONS
-
-pay_group.pay_group_name
-- Extract the payroll frequency or payroll group if explicitly stated.
-- Examples include Weekly, Biweekly, Semi-Monthly, Monthly.
-- If not present, return "N/A".
-
-pay_group.pay_begin_date
-- Extract the FIRST date of the payroll period.
-- Recognize equivalent labels including (but not limited to):
-  - Pay Period Start
-  - Period Begin
-  - Begin Date
-  - Start Date
-  - Payroll Period Start
-  - Check Period Start
-  - From
-  - Period From
-- Return "N/A" if no payroll period start date is explicitly shown.
-
-pay_group.pay_end_date
-- Extract the LAST date of the payroll period.
-- Recognize equivalent labels including (but not limited to):
-  - Pay Period End
-  - Period End
-  - Period Ending
-  - End Date
-  - Payroll Period End
-  - Check Period End
-  - Through
-  - To
-  - Period To
-- IMPORTANT:
-  - If the document contains "Period Ending", this is the pay_end_date.
-  - DO NOT use the Pay Date or Check Date as pay_end_date.
-
-employee_data
-- Extract only the employee information shown on the paystub.
-
-employer_data
-- Extract only the employer information shown on the paystub.
-
-hours_and_earnings.regular_earning
-- Recognize Regular, Regular Pay, REG, Regular Hours, or equivalent terminology.
-
-hours_and_earnings.overtime_earning
-- Recognize Overtime, OT, O/T, Over Time, or equivalent terminology.
 
 JSON Schema
 
 {
-  "document_type": "paystub",
-
-  "pay_group": {
-    "pay_group_name": "",
-    "pay_begin_date": "",
-    "pay_end_date": ""
-  },
-
-  "employee_data": {
-    "employee_name": "",
-    "employee_address": "",
-    "employee_ssn": ""
-  },
-
-  "employer_data": {
-    "employer_name": "",
-    "employer_address": ""
-  },
-
-  "hours_and_earnings": {
-    "regular_earning": {
-      "regular_earning_rate": null,
-      "regular_earning_hours": null,
-      "current_period_regular_earning": null
+    "document_type": "W2",
+    "tax_year": "",
+    "employee": {
+        "first_name": "",
+        "middle_name": "",
+        "last_name": "",
+        "ssn/ssa": "",
+        "address": {
+            "street": "",
+            "city": "",
+            "state": "",
+            "zip_code": ""
+        }
     },
-    "overtime_earning": {
-      "overtime_earning_rate": null,
-      "overtime_earning_hours": null,
-      "current_period_overtime_earning": null
+    "employer": {
+        "name": "",
+        "ein": "",
+        "address": {
+            "street": "",
+            "city": "",
+            "state": "",
+            "zip_code": ""
+        }
+    },
+    "goss_pay_details": {
+        "reported_w2_wages": {
+            "box1_of_w-2": null,
+            "box3_of_w-2": null,
+            "box5_of_w-2": null
+        }
     }
-  }
-}
+}                                                               
 
-Process the provided paystub(s) and return ONLY the completed JSON object.
+Process the provided form w2(s) and return ONLY the completed JSON object.
 """
 
     content_blocks.append({
@@ -319,7 +283,6 @@ Process the provided paystub(s) and return ONLY the completed JSON object.
             cleaned_text
         )
         # Also handle the case where the value is unquoted (numeric):
-        # ex.  "line_4a_ira_distributions": 4a: 10000.0
         cleaned_text = re.sub(
             r'(:\s*)[\w]+[:\s]+([\d]+(?:\.\d+)?)',
             r'\1\2',
@@ -328,12 +291,8 @@ Process the provided paystub(s) and return ONLY the completed JSON object.
 
         # Parse the json to validate it and save it formatted
         parsed_json = json.loads(cleaned_text)
+        print("\n Debugging: before extraction metrics")
         parsed_json = extraction_metrics(parsed_json)
-
-        earnings_calc = calculate_earnings_by_basis(parsed_json)
-
-        # attach to the same top-level root where your existing keys already sit
-        parsed_json["earnings_calculation"] = earnings_calc
 
         return parsed_json
     
@@ -393,110 +352,6 @@ PERIODS_PER_YEAR = {
     "monthly": 12,
 }
 
-def detect_pay_frequency(pay_group):
-    """
-    Determines payroll frequency for the current paystub.
-
-    Priority:
-    1. Keyword match against pay_group_name (e.g. "Biweekly", "Semi-Monthly").
-    2. Fallback: infer from the day-span between pay_begin_date and pay_end_date.
-
-    Returns one of "weekly", "biweekly", "semimonthly", "monthly", or None if it
-    cannot be determined from the available fields.
-    """
-    pay_group_name = (pay_group.get("pay_group_name") or "").strip().lower()
-
-    if pay_group_name and pay_group_name != "n/a":
-        if any(k in pay_group_name for k in ("bi-weekly", "biweekly", "bi weekly")):
-            return "biweekly"
-        if any(k in pay_group_name for k in ("semi-monthly", "semimonthly", "semi monthly")):
-            return "semimonthly"
-        if "weekly" in pay_group_name:
-            return "weekly"
-        if "monthly" in pay_group_name:
-            return "monthly"
-
-    pay_begin = pay_group.get("pay_begin_date")
-    pay_end = pay_group.get("pay_end_date")
-
-    if not pay_begin or not pay_end or pay_begin in ("N/A", None) or pay_end in ("N/A", None):
-        return None
-
-    try:
-        begin_date = datetime.strptime(pay_begin, "%Y-%m-%d")
-        end_date = datetime.strptime(pay_end, "%Y-%m-%d")
-    except (ValueError, TypeError):
-        return None
-
-    day_span = (end_date - begin_date).days + 1  # inclusive of both start and end day
-
-    if day_span <= 0:
-        return None
-    elif 6 <= day_span <= 8:
-        return "weekly"
-    elif 13 <= day_span <= 15:
-        return "biweekly"
-    elif 16 <= day_span <= 17:
-        return "semimonthly"
-    elif 28 <= day_span <= 31:
-        return "monthly"
-    else:
-        return None
-
-
-def calculate_earnings_by_basis(data):
-    """
-    Normalizes the current period's REGULAR earning (overtime intentionally
-    excluded) across weekly, bi-weekly, monthly, and yearly bases, using the
-    detected pay frequency of the current paystub.
-    """
-    pay_group = data.get("pay_group") or {}
-    hours_and_earnings = data.get("hours_and_earnings") or {}
-    regular_earning = hours_and_earnings.get("regular_earning") or {}
-
-    current_regular_earning = regular_earning.get("current_period_regular_earning")
-
-    result = {
-        "detected_pay_frequency": "N/A",
-        "regular_earning_basis_amount": current_regular_earning,
-        "calculation_note": None,
-        "weekly": "N/A",
-        "bi_weekly": "N/A",
-        "monthly": "N/A",
-        "yearly": "N/A",
-    }
-
-    if current_regular_earning in (None, "N/A", ""):
-        result["calculation_note"] = "Regular earning amount is missing; cannot calculate."
-        return result
-
-    try:
-        current_regular_earning = float(current_regular_earning)
-    except (ValueError, TypeError):
-        result["calculation_note"] = "Regular earning amount is not numeric; cannot calculate."
-        return result
-
-    frequency = detect_pay_frequency(pay_group)
-
-    if not frequency:
-        result["calculation_note"] = "Could not determine pay frequency from pay_group_name or period dates."
-        return result
-
-    result["detected_pay_frequency"] = frequency
-
-    periods_per_year = PERIODS_PER_YEAR[frequency]
-    annual_earning = current_regular_earning * periods_per_year
-
-    result["weekly"] = round(annual_earning / PERIODS_PER_YEAR["weekly"], 2)
-    result["bi_weekly"] = round(annual_earning / PERIODS_PER_YEAR["biweekly"], 2)
-    result["monthly"] = round(annual_earning / PERIODS_PER_YEAR["monthly"], 2)
-    result["yearly"] = round(annual_earning, 2)
-    result["calculation_note"] = (
-        f"Derived from a detected '{frequency}' pay frequency. "
-        "Regular earning only; overtime excluded."
-    )
-
-    return result
 
 def extraction_metrics(parsed_json, accuracy_score=None):
     """
@@ -506,15 +361,16 @@ def extraction_metrics(parsed_json, accuracy_score=None):
     data = parsed_json if not isinstance(parsed_json, str) else json.loads(parsed_json)
 
     all_fields = get_all_generated_fields(data)
-    employee_info = data.get("employee_data")
-    employer_info = data.get("employer_data")
-    hours_and_earnings = data.get("hours_and_earnings")
+    employee_info = data.get("employee") or {}
+    employer_info = data.get("employer") or {}
+    goss_pay_details = data.get("goss_pay_details") or {}
+    
     total_fields = len(all_fields)
     null_fields = sum(1 for value in all_fields.values() if value in ("N/A", None, ""))
     filled_fields = total_fields - null_fields
 
     percent_filled = round((filled_fields / total_fields) * 100, 2) if total_fields > 0 else 0.0
-
+    
     # HITL trigger conditions
     hitl_trigger = False
     routing_reasons = []
@@ -523,44 +379,62 @@ def extraction_metrics(parsed_json, accuracy_score=None):
         hitl_trigger = True
         routing_reasons.append("Critical low data density (under 92.00% filled).")
     
-    employee_ssn = employee_info.get("employee_ssn")
+    employee_ssn = employee_info.get("ssn/ssa")
     if not employee_ssn or employee_ssn in ("N/A", None, ""):
         hitl_trigger = True
         routing_reasons.append("Missing Employee SSN.")
     
     # Check for Taxpayer Name (first and last name)
-    employee_name = employee_info.get("employee_name")
-    if (not employee_name or employee_name in ("N/A", None, "")):
+    first_name = employee_info.get("first_name")
+    last_name = employee_info.get("last_name")
+    if (not first_name or first_name in ("N/A", None, "")) and (not last_name or last_name in ("N/A", None, "")):
         hitl_trigger = True
         routing_reasons.append("Missing Employee Name.")
 
-    employee_address = employee_info.get("employee_address")
-    if (not employee_address or employee_address in ("N/A", None, "")):
+    employee_address = employee_info.get("address") or {}
+    if (not employee_address or all(v in ("N/A", None, "") for v in employee_address.values())):
         hitl_trigger = True
         routing_reasons.append("Missing Employee Address.")
 
-    employer_name = employer_info.get("employer_name")
+    employer_name = employer_info.get("name")
     if (not employer_name or employer_name in ("N/A", None, "")):
         hitl_trigger = True
         routing_reasons.append("Missing Employer Name.")
 
-    employer_address = employer_info.get("employer_address")
-    if (not employer_address or employer_address in ("N/A", None, "")):
+    employer_address = employer_info.get("address") or {}
+    if (not employer_address or all(v in ("N/A", None, "") for v in employer_address.values())):
         hitl_trigger = True
         routing_reasons.append("Missing Employer Address.")
 
-    reg_earning = hours_and_earnings.get("regular_earning")
-    total_reg_earning = len(reg_earning)
-    reg_null_fields = sum(1 for value in reg_earning.values() if value in ("N/A", None, ""))
-    if reg_null_fields > 0:
+    reported_wages = goss_pay_details.get("reported_w2_wages") or {}
+    box1 = reported_wages.get("box1_of_w-2")
+    if box1 in ("N/A", None, ""):
         hitl_trigger = True
-        routing_reasons.append("Missing Regular Earning Data")
+        routing_reasons.append("Missing Box 1 Wages.")
 
     hitl_trigger = True # HITL trigger is kept true for each application/form for now as per client requirement. REMOVE this line going forward.
 
     na_fields = [field for field, value in all_fields.items() if value in ("N/A", None, "")]
 
+    # Helper: build a full employee name string
+    def get_full_name(info: dict) -> str:
+        parts = [
+            info.get("first_name"),
+            info.get("middle_name"),
+            info.get("last_name"),
+        ]
+        parts = [p for p in parts if p and p not in ("N/A", None, "")]
+        return " ".join(parts) if parts else "N/A"
+
     report_payload = {
+        "report_metadata": {
+            "employee_name": get_full_name(employee_info),
+            "employee_ssn": employee_ssn if employee_ssn else "N/A",
+            "employer_name": employer_info.get("name") or "N/A",
+            "employer_ein": employer_info.get("ein") or "N/A",
+            "tax_year": data.get("tax_year") or "N/A",
+            "document_type": data.get("document_type") or "W2",
+        },
         "extraction_density_metrics": {
             "total_fields_defined": total_fields,
             "null_fields_count": null_fields,
@@ -575,30 +449,30 @@ def extraction_metrics(parsed_json, accuracy_score=None):
     }
 
     id_fields = {
-        "employee_name": employee_name if employee_name else "N/A",
+        "employee_name": get_full_name(employee_info),
         "employee_ssn": employee_ssn if employee_ssn else "N/A",
-        "employer_name": employee_name if employee_name else "N/A",
+        "employer_name": employer_info.get("name") or "N/A",
+        "employer_ein": employer_info.get("ein") or "N/A",
+        "tax_year": data.get("tax_year") or "N/A",
+        "zip_code": employee_address.get("zip_code") or "N/A",
+        "state": employee_address.get("state") or "N/A",
     }
 
     data["processing_report"] = report_payload
     data["identification_fields"] = id_fields
     return data
 
-# if __name__ == "__main__":
-#     target_images = [
-#         # "paystub/paystub_test_img/image.png"
-#         # "paystub/paystub_test_img/Screenshot 2026-07-21 152031.png"
-#         "paystub/paystub_test_img/image copy.png"
-#     ]
-#     target_pdf = ["ZIPAI_proj/FormFormats/Paystubs/paystub-sample-2017.pdf"]
+if __name__ == "__main__":
+    # target_images = []
+    target_pdf = ["C:/Users/Lenovo/Desktop/ZIPAI_proj/FormFormats/W2/final_w2.pdf"]
     
-#     output_json_file = "json/paystub_output.json"
+    output_json_file = "FormW2/json/w2_output.json"
     
-#     logger.info("Starting paystub Extraction with Bedrock Vision LLM")
-#     data = extract_paystub(target_images)
+    logger.info("Starting paystub Extraction with Bedrock Vision LLM")
+    data = extract_w2_vision(target_pdf)
     
-#     if data:
-#         os.makedirs(os.path.dirname(output_json_file), exist_ok=True)
-#         with open(output_json_file, "w", encoding="utf-8") as f:
-#             json.dump(data, f, indent=4)
-#         logger.info(f"Saved extraction output to {output_json_file}")
+    if data:
+        os.makedirs(os.path.dirname(output_json_file), exist_ok=True)
+        with open(output_json_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"Saved extraction output to {output_json_file}")
