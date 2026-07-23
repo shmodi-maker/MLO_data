@@ -36,31 +36,34 @@ async def upload_file_1099(
     user_id: str = Form(...), 
     file: UploadFile=File(...)
     ):
-   temp_dir = tempfile.gettempdir()
-   temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
+    temp_dir = tempfile.gettempdir()
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".pdf"
+    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}{ext}")
 
-   with open(temp_path, "wb") as buffer:
-       shutil.copyfileobj(file.file, buffer)
-   await file.close()
-   db = Database()
-   try:
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    await file.close()
+    try:
         s3_key = upload_pdf(temp_path, "1099")
         form1099_data, subtype = extract_1099_data(temp_path)
-        document_id = db.insert_json(
-            table_name="form_1099",
-            user_id=user_id,
-            json_data=form1099_data,
-            s3_key=s3_key,
-            subtype=subtype
-        )
-        return {
-            "document_id": document_id,
-            "user_id": user_id,
-            "form_subtype": subtype,
-            "data": form1099_data
-        }
-   finally: 
-        db.close()
+        db = Database()
+        try:
+            document_id = db.insert_json(
+                table_name="form_1099",
+                user_id=user_id,
+                json_data=form1099_data,
+                s3_key=s3_key,
+                subtype=subtype
+            )
+            return {
+                "document_id": document_id,
+                "user_id": user_id,
+                "form_subtype": subtype,
+                "data": form1099_data
+            }
+        finally:
+            db.close()
+    finally:
         if os.path.exists(temp_path):
             gc.collect()
             # time.sleep(1)
@@ -73,31 +76,33 @@ async def upload_file_w2(
     file: UploadFile=File(...)
     ):
    
-   temp_dir = tempfile.gettempdir()
-   temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
+    temp_dir = tempfile.gettempdir()
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".pdf"
+    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}{ext}")
 
-   with open(temp_path, "wb") as buffer:
-       shutil.copyfileobj(file.file, buffer)
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-   await file.close()
-   db = Database()
-   try:
+    await file.close()
+    try:
         s3_key = upload_pdf(temp_path, "w2")
         w2_data = extract_w2_vision(temp_path)
-        document_id = db.insert_json(
-            table_name="form_w2",
-            user_id=user_id,
-            json_data=w2_data,
-            s3_key=s3_key
-        )
-        return {
-            "document_id": document_id,
-            "user_id": user_id,
-            "data": w2_data
-        }
-   
-   finally: 
-        db.close()
+        db = Database()
+        try:
+            document_id = db.insert_json(
+                table_name="form_w2",
+                user_id=user_id,
+                json_data=w2_data,
+                s3_key=s3_key
+            )
+            return {
+                "document_id": document_id,
+                "user_id": user_id,
+                "data": w2_data
+            }
+        finally:
+            db.close()
+    finally:
         if os.path.exists(temp_path):
             gc.collect()
             # time.sleep(1)
@@ -109,29 +114,32 @@ async def upload_file_1041(
     user_id: str = Form(...), 
     file: UploadFile=File(...)
     ):
-   temp_dir = tempfile.gettempdir()
-   temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
+    temp_dir = tempfile.gettempdir()
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".pdf"
+    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}{ext}")
 
-   with open(temp_path, "wb") as buffer:
-       shutil.copyfileobj(file.file, buffer)
-   await file.close()
-   db = Database()
-   try:
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    await file.close()
+    try:
        s3_key = upload_pdf(temp_path, "1041")
        form1041_data = extract_1041(temp_path)
-       document_id = db.insert_json(
-            table_name="form_1041",
-            user_id=user_id,
-            json_data=form1041_data,
-            s3_key=s3_key
-        )
-       return {
-            "document_id": document_id,
-            "user_id": user_id,
-            "data": form1041_data
-        }
-   finally: 
-        db.close()
+       db = Database()
+       try:
+           document_id = db.insert_json(
+                table_name="form_1041",
+                user_id=user_id,
+                json_data=form1041_data,
+                s3_key=s3_key
+            )
+           return {
+                "document_id": document_id,
+                "user_id": user_id,
+                "data": form1041_data
+            }
+       finally:
+           db.close()
+    finally: 
         if os.path.exists(temp_path):
             gc.collect()
             # time.sleep(1)
@@ -144,32 +152,35 @@ async def upload_file_1040(
     user_id: str = Form(...), 
     file: UploadFile=File(...)
     ):
-   temp_dir = tempfile.gettempdir()
-   temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
+    temp_dir = tempfile.gettempdir()
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".pdf"
+    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}{ext}")
 
-   with open(temp_path, "wb") as buffer:
-       shutil.copyfileobj(file.file, buffer)
-   await file.close()
-   db = Database()
-   try:
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    await file.close()
+    try:
         s3_key = upload_pdf(temp_path, "1040")
         form1040_data, form_year = extract_1040_data(temp_path)
-        document_id = db.insert_json(
-            table_name="form_1040",
-            user_id=user_id,
-            json_data=form1040_data,
-            s3_key=s3_key,
-            form_year=form_year
-        )
-        return {
-            "document_id": document_id,
-            "user_id": user_id,
-            "form_year": form_year,
-            "data": form1040_data
-        }
+        db = Database()
+        try:
+            document_id = db.insert_json(
+                table_name="form_1040",
+                user_id=user_id,
+                json_data=form1040_data,
+                s3_key=s3_key,
+                form_year=form_year
+            )
+            return {
+                "document_id": document_id,
+                "user_id": user_id,
+                "form_year": form_year,
+                "data": form1040_data
+            }
+        finally:
+            db.close()
 
-   finally: 
-        db.close()
+    finally: 
         if os.path.exists(temp_path):
             gc.collect()
             # time.sleep(1)
@@ -210,14 +221,14 @@ async def upload_file_paystub(
     user_id: str = Form(...), 
     file: UploadFile=File(...)
     ):
-   temp_dir = tempfile.gettempdir()
-   temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
+    temp_dir = tempfile.gettempdir()
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".pdf"
+    temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}{ext}")
 
-   with open(temp_path, "wb") as buffer:
-       shutil.copyfileobj(file.file, buffer)
-   await file.close()
-   db = Database()
-   try:
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    await file.close()
+    try:
         s3_key = upload_pdf(temp_path, "paystub")
         paystub_data = extract_paystub(temp_path)
         if not paystub_data:
@@ -225,20 +236,23 @@ async def upload_file_paystub(
                 status_code=500,
                 detail="Failed to extract paystub data"
             )
-        document_id = db.insert_json(
-            table_name="paystub",
-            user_id=user_id,
-            json_data=paystub_data,
-            s3_key=s3_key
-        )
-        return {
-            "document_id": document_id,
-            "user_id": user_id,
-            "data": paystub_data
-        }
+        db = Database()
+        try:
+            document_id = db.insert_json(
+                table_name="paystub",
+                user_id=user_id,
+                json_data=paystub_data,
+                s3_key=s3_key
+            )
+            return {
+                "document_id": document_id,
+                "user_id": user_id,
+                "data": paystub_data
+            }
+        finally:
+            db.close()
 
-   finally: 
-        db.close()
+    finally: 
         if os.path.exists(temp_path):
             gc.collect()
             # time.sleep(1)

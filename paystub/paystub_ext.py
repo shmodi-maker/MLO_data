@@ -393,6 +393,56 @@ PERIODS_PER_YEAR = {
     "monthly": 12,
 }
 
+def parse_date(date_str):
+    if not date_str or not isinstance(date_str, str):
+        return None
+    date_str = date_str.strip()
+    
+    # Common formats to check first
+    formats = (
+        "%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y", "%Y/%m/%d", "%d/%m/%Y",
+        "%m/%d/%y", "%m-%d-%y", "%y-%m-%d", "%d/%m/%y",
+        "%b %d, %Y", "%B %d, %Y", "%d %b %Y", "%d %B %Y",
+        "%b %d, %y", "%B %d, %y"
+    )
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+            
+    # Try regex pattern search if the string contains extra characters/words
+    # 4-digit year pattern: MM/DD/YYYY or MM-DD-YYYY
+    match = re.search(r'\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b', date_str)
+    if match:
+        m, d, y = match.groups()
+        try:
+            return datetime(int(y), int(m), int(d))
+        except ValueError:
+            pass
+            
+    # 4-digit year pattern: YYYY-MM-DD or YYYY/MM/DD
+    match = re.search(r'\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b', date_str)
+    if match:
+        y, m, d = match.groups()
+        try:
+            return datetime(int(y), int(m), int(d))
+        except ValueError:
+            pass
+
+    # 2-digit year pattern: MM/DD/YY or MM-DD-YY
+    match = re.search(r'\b(\d{1,2})[-/](\d{1,2})[-/](\d{2})\b', date_str)
+    if match:
+        m, d, y = match.groups()
+        # Assume 2000s for 2-digit year
+        year = int(y) + 2000
+        try:
+            return datetime(year, int(m), int(d))
+        except ValueError:
+            pass
+            
+    return None
+
 def detect_pay_frequency(pay_group):
     """
     Determines payroll frequency for the current paystub.
@@ -406,15 +456,14 @@ def detect_pay_frequency(pay_group):
     """
     pay_group_name = (pay_group.get("pay_group_name") or "").strip().lower()
 
-    if pay_group_name and pay_group_name != "n/a":
-        if any(k in pay_group_name for k in ("bi-weekly", "biweekly", "bi weekly")):
-            return "biweekly"
-        if any(k in pay_group_name for k in ("semi-monthly", "semimonthly", "semi monthly")):
-            return "semimonthly"
-        if "weekly" in pay_group_name:
-            return "weekly"
-        if "monthly" in pay_group_name:
-            return "monthly"
+    if any(k in pay_group_name for k in ("bi-weekly", "biweekly", "bi weekly")):
+        return "biweekly"
+    if any(k in pay_group_name for k in ("semi-monthly", "semimonthly", "semi monthly")):
+        return "semimonthly"
+    if "weekly" in pay_group_name:
+        return "weekly"
+    if "monthly" in pay_group_name:
+        return "monthly"
 
     pay_begin = pay_group.get("pay_begin_date")
     pay_end = pay_group.get("pay_end_date")
@@ -422,19 +471,19 @@ def detect_pay_frequency(pay_group):
     if not pay_begin or not pay_end or pay_begin in ("N/A", None) or pay_end in ("N/A", None):
         return None
 
-    try:
-        begin_date = datetime.strptime(pay_begin, "%Y-%m-%d")
-        end_date = datetime.strptime(pay_end, "%Y-%m-%d")
-    except (ValueError, TypeError):
+    begin_date = parse_date(pay_begin)
+    end_date = parse_date(pay_end)
+
+    if not begin_date or not end_date:
         return None
 
     day_span = (end_date - begin_date).days + 1  # inclusive of both start and end day
 
     if day_span <= 0:
         return None
-    elif 6 <= day_span <= 8:
+    elif 5 <= day_span <= 8:
         return "weekly"
-    elif 13 <= day_span <= 15:
+    elif 10 <= day_span <= 15:
         return "biweekly"
     elif 16 <= day_span <= 17:
         return "semimonthly"
